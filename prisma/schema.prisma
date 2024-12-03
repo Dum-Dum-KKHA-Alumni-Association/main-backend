@@ -1,0 +1,148 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id                     String     @id @unique
+  name                   String
+  email                  String     @unique
+  password               String
+  dateOfBirth            DateTime
+  gender                 Gender
+  madyamikYear           Int
+  higherSecondaryYear    Int
+  mobile                 Int
+  whatsappNumber         Int
+  role                   Role
+  membership             String
+  presentLocationAddress String
+  contactLocationAddress String
+  occupation             String
+  createdAt              DateTime?  @default(now())
+  updatedAt              DateTime?  @updatedAt
+  Events                 Events?    @relation(fields: [eventsId], references: [id])
+  refreshToken    String?
+  eventsId               String?
+  Attendee               Attendee[]
+}
+
+model DonationEvent {
+  id              String         @id @unique
+  title           String
+  slug            String         @unique
+  description     String
+  thumbnail       String
+  listOfDonors    Donors[]
+  targetAmount    Int
+  collectedAmount Int
+  expirationDate  DateTime
+  status          DonationStatus
+  createdAt       DateTime?      @default(now())
+  updatedAt       DateTime?      @updatedAt
+}
+
+model Donors {
+  id                     String        @id @unique
+  paymentId              String
+  donationEventId        String
+  name                   String
+  email                  String        @unique
+  dateOfBirth            DateTime
+  gender                 Gender
+  madyamikYear           Int
+  higherSecondaryYear    Int
+  mobile                 Int
+  whatsappNumber         Int
+  presentLocationAddress String
+  contactLocationAddress String
+  occupation             String
+  createdAt              DateTime?     @default(now())
+  updatedAt              DateTime?     @updatedAt
+  DonationEvent          DonationEvent @relation(fields: [donationEventId], references: [id])
+}
+
+model Events {
+  id          String             @id @unique
+  title       String
+  slug        String             @unique
+  description Json
+  mode        EventMode
+  thumbnail   String
+  date        DateTime
+  attendee    User[]
+  status      RegistrationStatus
+  createdAt   DateTime?          @default(now())
+  updatedAt   DateTime?          @updatedAt
+  Attendee    Attendee[]
+}
+
+model Attendee {
+  id        String    @id @unique
+  UserId    User      @relation(fields: [userId], references: [id])
+  EventsId  Events    @relation(fields: [eventsId], references: [id])
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  userId    String
+  PaymentId Payment   @relation(fields: [paymentId], references: [id])
+  eventsId  String
+  paymentId String
+}
+
+model Payment {
+  id            String        @id @unique
+  transactionId String        @unique
+  amount        Int
+  status        PaymentStatus
+  paymentDate   DateTime
+  receiptUrl    String
+  createdAt     DateTime?     @default(now())
+  updatedAt     DateTime?     @updatedAt
+  Attendee      Attendee[]
+}
+
+enum EventMode {
+  ONLINE
+  OFFLINE
+}
+
+enum RegistrationStatus {
+  COMPLETED
+  ONGOING
+  EXPIRED
+}
+
+enum PaymentStatus {
+  SUCCESS
+  FAILED
+}
+
+enum DonationStatus {
+  ACTIVE
+  EXPIRED
+  COMPLETED
+  POSTPONE
+}
+
+enum Role {
+  USER
+  ADMIN
+  EDITOR
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHERS
+}

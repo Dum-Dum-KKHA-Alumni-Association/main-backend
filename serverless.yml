@@ -1,0 +1,24 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: webflexrr
+# "app" enables Serverless Framework Dashboard features and sharing them with other Services.
+app: ddkkhaaa-app
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: serverless
+useDotenv: true
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: ap-south-1
+  memorySize: 512
+  timeout: 10
+
+functions:
+  api:
+    handler: src/index.handle
+    events:
+      - httpApi: "*"
+
+plugins:
+  - serverless-offline
+  - serverless-dotenv-plugin
