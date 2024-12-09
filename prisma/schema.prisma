@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
@@ -33,51 +33,54 @@ model User {
   createdAt              DateTime?  @default(now())
   updatedAt              DateTime?  @updatedAt
   Events                 Events?    @relation(fields: [eventsId], references: [id])
-  refreshToken    String?
+  refreshToken           String?
   eventsId               String?
   Attendee               Attendee[]
 }
 
-model DonationEvent {
-  id              String         @id @unique
+model DonationPage {
+  id              String         @id @unique @default(uuid())
   title           String
   slug            String         @unique
   description     String
   thumbnail       String
-  listOfDonors    Donors[]
+  listOfDonors    Donation[]
   targetAmount    Int
-  collectedAmount Int
+  collectedAmount Int?           @default(0)
   expirationDate  DateTime
-  status          DonationStatus
+  status          DonationStatus @default(ACTIVE)
   createdAt       DateTime?      @default(now())
   updatedAt       DateTime?      @updatedAt
 }
 
-model Donors {
-  id                     String        @id @unique
-  paymentId              String
-  donationEventId        String
-  name                   String
-  email                  String        @unique
-  dateOfBirth            DateTime
-  gender                 Gender
-  madyamikYear           Int
-  higherSecondaryYear    Int
-  mobile                 Int
-  whatsappNumber         Int
-  presentLocationAddress String
-  contactLocationAddress String
-  occupation             String
-  createdAt              DateTime?     @default(now())
-  updatedAt              DateTime?     @updatedAt
-  DonationEvent          DonationEvent @relation(fields: [donationEventId], references: [id])
+model Donation {
+  id                  String         @id @unique @default(uuid())
+  firstName           String
+  lastName            String
+  email               String
+  whatsappNumber      String
+  alternativeNumber   String
+  dateOfBirth         DateTime
+  gender              Gender
+  madyamikYear        Int
+  higherSecondaryYear Int
+  presentAddress      String
+  contactAddress      String
+  occupation          String
+  amount              Int
+  paymentStatus       PaymentStatus? @default(PROCESSING)
+  donationPageId      String?
+  DonationPage        DonationPage?   @relation(fields: [donationPageId], references: [id], onDelete: SetNull, onUpdate:  SetNull)
+  payment             Payment?
+  createdAt           DateTime?      @default(now())
+  updatedAt           DateTime?      @updatedAt
 }
 
 model Events {
-  id          String             @id @unique
+  id          String             @id @unique @default(uuid())
   title       String
   slug        String             @unique
-  description Json
+  description String
   mode        EventMode
   thumbnail   String
   date        DateTime
@@ -89,19 +92,18 @@ model Events {
 }
 
 model Attendee {
-  id        String    @id @unique
+  id        String    @id @unique @default(uuid())
   UserId    User      @relation(fields: [userId], references: [id])
   EventsId  Events    @relation(fields: [eventsId], references: [id])
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
   userId    String
-  PaymentId Payment   @relation(fields: [paymentId], references: [id])
+  payment   Payment?
   eventsId  String
-  paymentId String
 }
 
 model Payment {
-  id            String        @id @unique
+  id            String        @id @unique @default(uuid())
   transactionId String        @unique
   amount        Int
   status        PaymentStatus
@@ -109,7 +111,10 @@ model Payment {
   receiptUrl    String
   createdAt     DateTime?     @default(now())
   updatedAt     DateTime?     @updatedAt
-  Attendee      Attendee[]
+  attendeeId    String?       @unique
+  Attendee      Attendee?     @relation(fields: [attendeeId], references: [id])
+  donationId    String        @unique
+  DonationId    Donation      @relation(fields: [donationId], references: [id])
 }
 
 enum EventMode {
@@ -124,6 +129,7 @@ enum RegistrationStatus {
 }
 
 enum PaymentStatus {
+  PROCESSING
   SUCCESS
   FAILED
 }

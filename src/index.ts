@@ -6,4 +6,4 @@ app.listen(port, () => {
   console.log(`Server is Fire at http://localhost:${port}`);
 });
 
-const handler = serverless(app);
+export const handler = serverless(app);

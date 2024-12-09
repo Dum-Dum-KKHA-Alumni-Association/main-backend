@@ -1,4 +1,4 @@
-import { WithAuthProp } from '@clerk/clerk-sdk-node';
+import { WithAuthProp } from "@clerk/express";
 import { Request } from 'express';
 
 interface ClerkUser {

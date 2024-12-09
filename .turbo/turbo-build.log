@@ -1,6 +1,0 @@
-[?9001h[?1004h[?25l[2J[m[H]0;C:\WINDOWS\system32\cmd.exe[?25h[1myarn run v1.22.19
-[22m[K[2m$ tsc -p
-[22merror TS6044: Compiler option 'project' expects an argument.
-[K[31merror [mCommand failed with exit code 1.[94m
-info [mVisit [1mhttps://yarnpkg.com/en/docs/cli/run[22m for documentation about this command.
-[?9001l[?1004l
