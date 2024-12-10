@@ -1,4 +1,4 @@
-export const createSlug = (str:string) => {
+export const createSlug = (str: string) => {
 	const convertedStr = str
 		.replace(/^\s+|\s+$/g, '')
 		.toLowerCase()

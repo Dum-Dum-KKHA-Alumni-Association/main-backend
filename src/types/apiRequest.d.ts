@@ -1,4 +1,4 @@
-import { WithAuthProp } from "@clerk/express";
+import { WithAuthProp } from '@clerk/express';
 import { Request } from 'express';
 
 interface ClerkUser {

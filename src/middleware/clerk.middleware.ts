@@ -1,6 +1,5 @@
-import { requireAuth } from "@clerk/express";
+import { requireAuth } from '@clerk/express';
 
-const authMiddleware = requireAuth({ signInUrl: "/sign-in" });
-
+const authMiddleware = requireAuth({ signInUrl: '/sign-in' });
 
 export default authMiddleware;

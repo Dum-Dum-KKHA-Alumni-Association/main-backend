@@ -1,14 +1,12 @@
-import { Request, Response } from "express";
-import asyncHandler from "../utils/asyncHandler";
-import ApiResponse from "../utils/ApiResponse";
-import ApiError from "../utils/ApiError";
-import { AuthenticatedRequest } from "../types/apiRequest";
-import prisma from "../db/prismaClient";
+import { Response } from 'express';
+import asyncHandler from '../utils/asyncHandler';
+
+import { AuthenticatedRequest } from '../types/apiRequest';
 
 export const getUserDetails = asyncHandler(
-  async (request: AuthenticatedRequest, response: Response) => {
-    const userId = request.auth?.userId;
+	async (request: AuthenticatedRequest, response: Response) => {
+		// const userId = request.auth?.userId;
 
-    response.json({ message: "User Protected route" });
-  }
+		response.json({ message: 'User Protected route' });
+	}
 );

@@ -1,10 +1,19 @@
-import { Router } from "express";
-import { checkPaymentStatus, initiatePay } from "../controllers/payment.controllers";
+import { Router } from 'express';
+import {
+	initiatePay,
+	paymentStatusWebhook,
+} from '../controllers/payment.controllers';
 
 const router = Router();
 
 //Donation Page
-router.route("/").post(initiatePay);
-router.route("/status").post(checkPaymentStatus);
+router.route('/').post(initiatePay);
+// router
+// 	.route('/status/:donationId/:merchantTransactionId')
+// 	.get(checkPaymentStatus)
+// 	.post(checkPaymentStatus);
+router
+	.route('/phonepe-callback/:donationId/:merchantTransactionId')
+	.post(paymentStatusWebhook);
 
 export default router;
