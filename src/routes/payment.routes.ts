@@ -1,19 +1,23 @@
 import { Router } from 'express';
 import {
-	initiatePay,
+	checkPaymentGateWayStatus,
+	// checkPaymentStatus,
+	// checkPaymentStatusForm,
 	paymentStatusWebhook,
 } from '../controllers/payment.controllers';
 
 const router = Router();
 
-//Donation Page
-router.route('/').post(initiatePay);
 // router
-// 	.route('/status/:donationId/:merchantTransactionId')
-// 	.get(checkPaymentStatus)
+// 	.route('/status/:merchantTransactionId')
+// 	// .get(checkPaymentStatus)
 // 	.post(checkPaymentStatus);
 router
-	.route('/phonepe-callback/:donationId/:merchantTransactionId')
-	.post(paymentStatusWebhook);
+	.route('/status')
+	.post(checkPaymentGateWayStatus);
+// router
+// 	.route('/status')
+// 	.post(checkPaymentStatusForm);
+router.route('/phonepe-callback').post(paymentStatusWebhook);
 
 export default router;

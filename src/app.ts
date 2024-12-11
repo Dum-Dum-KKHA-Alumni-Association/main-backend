@@ -5,6 +5,7 @@ import userRouter from './routes/user.routes';
 import donationRouter from './routes/donation.routes';
 import paymentRouter from './routes/payment.routes';
 import cors from 'cors';
+import bodyParser from 'body-parser';
 
 dotenv.config();
 
@@ -17,6 +18,8 @@ const corsOptions = {
 	credentials: true, // If cookies or credentials are used
 };
 app.use(cors(corsOptions));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.json({ limit: '16kb' })); //accept JSON data
 app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(express.static('public'));

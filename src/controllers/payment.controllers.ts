@@ -1,180 +1,112 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../types/apiRequest';
 import asyncHandler from '../utils/asyncHandler';
-import ApiResponse from '../utils/ApiResponse';
+// import ApiResponse from '../utils/ApiResponse';
 import ApiError from '../utils/ApiError';
-import axios from 'axios';
-import { v4 as uuidv4 } from 'uuid';
+
+// import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import prisma from '../db/prismaClient';
 import { console } from 'inspector';
-
-export const initiatePay = asyncHandler(
-	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
-		const { name, amount, mobile } = request.body;
-
-		const payEndPoint = '/pg/v1/pay';
-		const merchantTransactionId = uuidv4();
-		const merchantUserId = 'MUID123343';
-
-		const payload = {
-			name,
-			merchantId: process.env.PHONEPE_MERCHANT_ID,
-			merchantTransactionId: merchantTransactionId,
-			merchantUserId: merchantUserId,
-			amount: amount * 100,
-			redirectUrl: `https://localhost:8000/api/v1/status/${merchantTransactionId}`,
-			redirectMode: 'POST',
-			callbackUrl: `https://localhost:8000/api/v1/status/${merchantTransactionId}`,
-			mobileNumber: mobile,
-			paymentInstrument: {
-				type: 'PAY_PAGE',
-			},
-		};
-
-		// SHA256(base64 encoded payload + “/pg/v1/pay” +salt key) + ### + salt index
-		const payloadString = JSON.stringify(payload);
-		const payloadMain = Buffer.from(payloadString).toString('base64');
-
-		const hash = crypto
-			.createHash('sha256')
-			.update(payloadMain + payEndPoint + process.env.SALT_KEY)
-			.digest('hex');
-
-		const xVerify = hash + '###' + process.env.SALT_INDEX;
-
-		try {
-			const payResponse = await axios.post(
-				`${process.env.PHONEPE_API_URL!}`,
-				{
-					request: payloadMain,
-				},
-				{
-					headers: {
-						'Content-Type': 'application/json',
-						'X-VERIFY': xVerify,
-					},
-				}
-			);
-			console.log(payResponse.data);
-
-			response
-				.status(200)
-				.json(new ApiResponse(200, payResponse.data, 'Initiate Pay'));
-		} catch (error) {
-			response.status(500).json(new ApiError(500, 'Error Happened', error));
-		}
-	}
-);
+import { callCheckStatusApi } from '../utils/paymentGateway';
 
 export const checkPaymentStatus = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
-		const { merchantTransactionId, donationId } = request.params;
+		// const { merchantTransactionId, donationId } = request.params;
+		// const { merchantTransactionId } = request.params;
+		const { merchantTransactionId } = request.body;
 
 		console.log(merchantTransactionId);
 
-		// SHA256(“/pg/v1/status/{merchantId}/{merchantTransactionId}” + saltKey) + “###” + saltIndex
-		const hash = crypto
-			.createHash('sha256')
-			.update(
-				`/pg/v1/status/${process.env.PHONEPE_MERCHANT_ID}/${merchantTransactionId}` +
-					process.env.SALT_KEY
-			)
-			.digest('hex');
-
-		const xVerify = hash + '###' + process.env.SALT_INDEX;
-
 		//Check Payment Status
 		try {
-			const { data } = await axios.get(
-				`${process.env.PHONEPE_API_URL!}/status/${process.env.PHONEPE_MERCHANT_ID}/${merchantTransactionId}`,
-				{
-					headers: {
-						'Content-Type': 'application/json',
-						'X-VERIFY': xVerify,
-						'X-MERCHANT-ID': process.env.PHONEPE_MERCHANT_ID,
-					},
-				}
-			);
+			const data = await callCheckStatusApi({ merchantTransactionId });
 
-			if (data && data.success === 'true') {
-				await prisma.$transaction(async (prisma) => {
-					const paymentDetailsUpdate = await prisma.payment.update({
-						where: {
-							merchantTransactionId,
-						},
-						data: {
-							transactionId: data.data.transactionId,
-							state: data.data.state,
-							responseCode: data.data.responseCode,
-							paymentType: data.data.paymentInstrument.type,
-							cardType: data.data.paymentInstrument.cardType,
-							pgTransactionId: data.data.paymentInstrument.pgTransactionId,
-							bankTransactionId: data.data.paymentInstrument.bankTransactionId,
-							pgAuthorizationCode:
-								data.data.paymentInstrument.pgAuthorizationCode,
-							arn: data.data.paymentInstrument.arn,
-							bankId: data.data.paymentInstrument.bankId,
-							brn: data.data.paymentInstrument.brn,
-							utr: data.data.paymentInstrument.utr,
-							pgServiceTransactionId:
-								data.data.paymentInstrument.pgServiceTransactionId,
-							responseDescription: data.data.responseCodeDescription,
-						},
-					});
-					console.log(paymentDetailsUpdate);
-
-					const donationDetails = await prisma.donation.update({
-						where: {
-							id: donationId,
-						},
-						data: {
-							Payment: {
-								connect: {
-									id: paymentDetailsUpdate.id,
-								},
-							},
-						},
-					});
-
-					console.log(paymentDetailsUpdate);
-					response
-						.status(200)
-						.json(
-							new ApiResponse(
-								200,
-								{ donationDetails, paymentDetailsUpdate },
-								'Payment Success'
-							)
-						);
-				});
+			// if (data && data.code === 'PAYMENT_SUCCESS') {
+			// await prisma.$transaction(async (prisma) => {
+			const paymentDetailsUpdate = await prisma.payment.update({
+				where: {
+					merchantTransactionId,
+				},
+				data: {
+					success: data.success,
+					code: data.code,
+					message: data.message,
+					transactionId: data.data.transactionId,
+					state: data.data.state,
+					responseCode: data.data.responseCode,
+					paymentType: data.data.paymentInstrument.type,
+					cardType: data.data.paymentInstrument.cardType,
+					pgTransactionId: data.data.paymentInstrument.pgTransactionId,
+					bankTransactionId: data.data.paymentInstrument.bankTransactionId,
+					pgAuthorizationCode: data.data.paymentInstrument.pgAuthorizationCode,
+					arn: data.data.paymentInstrument.arn,
+					bankId: data.data.paymentInstrument.bankId,
+					brn: data.data.paymentInstrument.brn,
+					utr: data.data.paymentInstrument.utr,
+					pgServiceTransactionId:
+						data.data.paymentInstrument.pgServiceTransactionId,
+					responseDescription: data.data.responseCodeDescription,
+				},
+			});
+			console.log(paymentDetailsUpdate);
+			if (data.success === true) {
+				response.redirect(
+					200,
+					`${process.env.FRONTEND_ENDPOINT_URL}/donation/success`
+				);
 			} else {
-				///Delete The Donation and Payment Details
-				const [donationDetails, paymentDetailsUpdate] =
-					await prisma.$transaction([
-						prisma.donation.delete({
-							where: {
-								id: donationId,
-							},
-						}),
-						prisma.payment.delete({
-							where: {
-								merchantTransactionId,
-							},
-						}),
-					]);
-
-				console.log(paymentDetailsUpdate);
-				response
-					.status(200)
-					.json(
-						new ApiResponse(
-							200,
-							{ donationDetails, paymentDetailsUpdate },
-							'Payment Error'
-						)
-					);
+				response.redirect(
+					400,
+					`${process.env.FRONTEND_ENDPOINT_URL}/donation/failed`
+				);
 			}
+
+			// const donationDetails = await prisma.donation.update({
+			// 	where: {
+			// 		id: donationId,
+			// 	},
+			// 	data: {
+			// 		Payment: {
+			// 			connect: {
+			// 				id: paymentDetailsUpdate.id,
+			// 			},
+			// 		},
+			// 	},
+			// });
+
+			// console.log(paymentDetailsUpdate);
+
+			// });
+			// }
+
+			// if (data && data.code === 'INTERNAL_SERVER_ERROR') {
+			// 	///Delete The Donation and Payment Details
+			// 	const [donationDetails, paymentDetailsUpdate] =
+			// 		await prisma.$transaction([
+			// 			prisma.donation.delete({
+			// 				where: {
+			// 					id: donationId,
+			// 				},
+			// 			}),
+			// 			prisma.payment.delete({
+			// 				where: {
+			// 					merchantTransactionId,
+			// 				},
+			// 			}),
+			// 		]);
+
+			// 	console.log(paymentDetailsUpdate);
+			// 	response
+			// 		.status(200)
+			// 		.json(
+			// 			new ApiResponse(
+			// 				200,
+			// 				{ donationDetails, paymentDetailsUpdate },
+			// 				'Payment Error'
+			// 			)
+			// 		);
+			// }
 
 			// const paymentDetailsUpdate = await prisma.payment.update({
 			// 	where: {
@@ -199,6 +131,59 @@ export const checkPaymentStatus = asyncHandler(
 			// 	},
 			// });
 		} catch (error) {
+			console.log(error);
+			response.status(400).json(new ApiError(400, 'Error Happened', error));
+		}
+	}
+);
+export const checkPaymentGateWayStatus = asyncHandler(
+	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
+		// const { merchantTransactionId, donationId } = request.params;
+		// const { merchantTransactionId } = request.params;
+		const body = request.body;
+
+		// console.log(merchantTransactionId);
+
+		//Check Payment Status
+		try {
+			const data = await callCheckStatusApi({
+				merchantTransactionId: body.transactionId,
+			});
+
+			// if (data && data.code === 'PAYMENT_SUCCESS') {
+			// await prisma.$transaction(async (prisma) => {
+			const paymentDetailsUpdate = await prisma.payment.update({
+				where: {
+					merchantTransactionId: body.transactionId,
+				},
+				data: {
+					success: data.success,
+					code: data.code,
+					message: data.message,
+					transactionId: data.data.transactionId,
+					state: data.data.state,
+					responseCode: data.data.responseCode,
+					paymentType: data.data.paymentInstrument.type,
+					cardType: data.data.paymentInstrument.cardType,
+					pgTransactionId: data.data.paymentInstrument.pgTransactionId,
+					bankTransactionId: data.data.paymentInstrument.bankTransactionId,
+					pgAuthorizationCode: data.data.paymentInstrument.pgAuthorizationCode,
+					arn: data.data.paymentInstrument.arn,
+					bankId: data.data.paymentInstrument.bankId,
+					brn: data.data.paymentInstrument.brn,
+					utr: data.data.paymentInstrument.utr,
+					pgServiceTransactionId:
+						data.data.paymentInstrument.pgServiceTransactionId,
+					responseDescription: data.data.responseCodeDescription,
+				},
+			});
+			console.log(paymentDetailsUpdate);
+			response.redirect(
+				`${process.env.FRONTEND_ENDPOINT_URL}/donation/success`
+			);
+
+			
+		} catch (error) {
 			response.status(400).json(new ApiError(400, 'Error Happened', error));
 		}
 	}
@@ -206,7 +191,7 @@ export const checkPaymentStatus = asyncHandler(
 
 export const paymentStatusWebhook = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
-		const { donationId, merchantTransactionId } = request.params;
+		// const {  merchantTransactionId } = request.params;
 		const base64Response = request.body.response;
 		const xVerifyHeader = request.headers['x-verify'];
 
@@ -241,112 +226,154 @@ export const paymentStatusWebhook = asyncHandler(
 
 		try {
 			////If Payment is Successfull
-			if (responseData.code === 'PAYMENT_SUCCESS') {
-				await prisma.$transaction(
-					async (prisma) => {
-						const paymentDetailsUpdate = await prisma.payment.update({
-							where: {
-								merchantTransactionId: responseData.data.merchantTransactionId,
-							},
-							data: {
-								transactionId: responseData.data.transactionId,
-								state: responseData.data.state,
-								responseCode: responseData.data.responseCode,
-								paymentType: responseData.data.paymentInstrument.type,
-								cardType: responseData.data.paymentInstrument.cardType,
-								pgTransactionId:
-									responseData.data.paymentInstrument.pgTransactionId,
-								bankTransactionId:
-									responseData.data.paymentInstrument.bankTransactionId,
-								pgAuthorizationCode:
-									responseData.data.paymentInstrument.pgAuthorizationCode,
-								arn: responseData.data.paymentInstrument.arn,
-								bankId: responseData.data.paymentInstrument.bankId,
-								brn: responseData.data.paymentInstrument.brn,
-								utr: responseData.data.paymentInstrument.utr,
-								pgServiceTransactionId:
-									responseData.data.paymentInstrument.pgServiceTransactionId,
-								responseDescription: responseData.data.responseCodeDescription,
-							},
-						});
-						console.log(paymentDetailsUpdate);
+			// if (responseData.code === 'PAYMENT_SUCCESS') {
+			// await prisma.$transaction(
+			// 	async (prisma) => {
+			const paymentDetailsUpdate = await prisma.payment.update({
+				where: {
+					merchantTransactionId: responseData.data.merchantTransactionId,
+				},
+				data: {
+					transactionId: responseData.data.transactionId,
+					state: responseData.data.state,
+					responseCode: responseData.data.responseCode,
+					paymentType: responseData.data.paymentInstrument.type,
+					cardType: responseData.data.paymentInstrument.cardType,
+					pgTransactionId: responseData.data.paymentInstrument.pgTransactionId,
+					bankTransactionId:
+						responseData.data.paymentInstrument.bankTransactionId,
+					pgAuthorizationCode:
+						responseData.data.paymentInstrument.pgAuthorizationCode,
+					arn: responseData.data.paymentInstrument.arn,
+					bankId: responseData.data.paymentInstrument.bankId,
+					brn: responseData.data.paymentInstrument.brn,
+					utr: responseData.data.paymentInstrument.utr,
+					pgServiceTransactionId:
+						responseData.data.paymentInstrument.pgServiceTransactionId,
+					responseDescription: responseData.data.responseCodeDescription,
+				},
+			});
+			console.log(paymentDetailsUpdate);
 
-						const donationDetails = await prisma.donation.update({
-							where: {
-								id: donationId,
-							},
-							data: {
-								Payment: {
-									connect: {
-										id: paymentDetailsUpdate.id,
-									},
-								},
-							},
-						});
+			// const donationDetails = await prisma.donation.update({
+			// 	where: {
+			// 		id: donationId,
+			// 	},
+			// 	data: {
+			// 		Payment: {
+			// 			connect: {
+			// 				id: paymentDetailsUpdate.id,
+			// 			},
+			// 		},
+			// 	},
+			// });
 
-						console.log(donationDetails);
+			response.status(200).json({
+				message: 'Callback processed successfully',
+			});
 
-						response.status(200).json({
-							message: 'Callback processed successfully',
-						});
-					},
-					{
-						maxWait: 5000, // 5 seconds max wait to connect to prisma
-						timeout: 10000, // 10 seconds
-					}
-				);
-			}
+			// 		{
+			// 			maxWait: 5000, // 5 seconds max wait to connect to prisma
+			// 			timeout: 10000, // 10 seconds
+			// 		}
+			// 	);
+			// }
 
 			////If Payment is PAYMENT_PENDING
 
-			if (
-				responseData.code === 'PAYMENT_PENDING' ||
-				responseData.code === 'INTERNAL_SERVER_ERROR'
-			) {
-				const checkStatusResponse = await axios.post(
-					`/status/${donationId}/${merchantTransactionId}`
-				);
+			////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			// if (
+			// 	responseData.code === 'PAYMENT_PENDING' ||
+			// 	responseData.code === 'INTERNAL_SERVER_ERROR'
+			// ) {
+			// 	console.log(
+			// 		'Payment pending or internal server error. Checking status...'
+			// 	);
 
-				console.log(checkStatusResponse);
-			}
+			// 	// Call Check Status API
 
-			////If Payment is Failed
+			// 	const statusResponse = await callCheckStatusApi({
+			// 		merchantTransactionId,
+			// 	});
 
-			if (responseData && responseData.code !== 'PAYMENT_ERROR') {
-				///Delete The Donation and Payment Details
-				const [donationDetails, paymentDetailsUpdate] =
-					await prisma.$transaction([
-						prisma.donation.delete({
-							where: {
-								id: donationId,
-							},
-						}),
-						prisma.payment.delete({
-							where: {
-								merchantTransactionId: responseData.data.merchantTransactionId,
-							},
-						}),
-					]);
+			// 	if (statusResponse && statusResponse.data.state === 'COMPLETED') {
+			// 		// Payment successful, update your database
+			// 		const paymentDetailsUpdate = await prisma.payment.update({
+			// 			where: {
+			// 				merchantTransactionId,
+			// 			},
+			// 			data: {
+			// 				success: statusResponse.success,
+			// 				code: statusResponse.code,
+			// 				message: statusResponse.message,
+			// 				state: statusResponse.data.state,
+			// 				responseCode: statusResponse.data.responseCode,
+			// 				paymentType: statusResponse.data.paymentInstrument.type,
+			// 				cardType: statusResponse.data.paymentInstrument.cardType,
+			// 				pgTransactionId:
+			// 					statusResponse.data.paymentInstrument.pgTransactionId,
+			// 				bankTransactionId:
+			// 					statusResponse.data.paymentInstrument.bankTransactionId,
+			// 				pgAuthorizationCode:
+			// 					statusResponse.data.paymentInstrument.pgAuthorizationCode,
+			// 				arn: statusResponse.data.paymentInstrument.arn,
+			// 				bankId: statusResponse.data.paymentInstrument.bankId,
+			// 				brn: statusResponse.data.paymentInstrument.brn,
+			// 				utr: statusResponse.data.paymentInstrument.utr,
+			// 				pgServiceTransactionId:
+			// 					statusResponse.data.paymentInstrument.pgServiceTransactionId,
+			// 				responseDescription: statusResponse.data.responseCodeDescription,
+			// 			},
+			// 		});
+			// 		console.log(paymentDetailsUpdate);
 
-				// console.log(donationDetails, paymentDetailsUpdate);
-				response
-					.status(200)
-					.json(
-						new ApiResponse(
-							200,
-							{ donationDetails, paymentDetailsUpdate },
-							'Payment Error'
-						)
-					);
-			}
+			// 		console.log('Payment successful:', statusResponse.data);
+			// 	} else {
+			// 		console.log('Payment not yet completed:', statusResponse);
+			// 	}
+
+			// 	console.log(statusResponse);
+			// }
+
+			// ////If Payment is Failed
+
+			// if (responseData && responseData.code !== 'PAYMENT_ERROR') {
+			// 	///Delete The Donation and Payment Details
+			// 	const [donationDetails, paymentDetailsUpdate] =
+			// 		await prisma.$transaction([
+			// 			prisma.donation.delete({
+			// 				where: {
+			// 					id: donationId,
+			// 				},
+			// 			}),
+			// 			prisma.payment.delete({
+			// 				where: {
+			// 					merchantTransactionId: responseData.data.merchantTransactionId,
+			// 				},
+			// 			}),
+			// 		]);
+
+			// 	// console.log(donationDetails, paymentDetailsUpdate);
+			// 	response
+			// 		.status(200)
+			// 		.json(
+			// 			new ApiResponse(
+			// 				200,
+			// 				{ donationDetails, paymentDetailsUpdate },
+			// 				'Payment Error'
+			// 			)
+			// 		);
+			// }
+
+			/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		} catch (error) {
 			console.log(error);
 			response.status(400).json(new ApiError(400, 'Error Happened', error));
 		}
 
 		// Acknowledge the callback
-		response
-			.status(200)
-			.json({ message: 'Callback processed successfully', responseData });
+		// response
+		// 	.status(200)
+		// 	.json({ message: 'Callback processed successfully', responseData });
 	}
 );

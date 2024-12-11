@@ -6,8 +6,10 @@ import {
 	deleteDonationPage,
 	editDonationPage,
 	getAllDonationPages,
-	getAllDonations,
+	getCountDonationsByPageId,
 	getDonationPage,
+	getDonationPageById,
+	getDonationsByPageId,
 	submitDonation,
 } from '../controllers/donation.controllers';
 
@@ -20,10 +22,12 @@ router
 	.get(getAllDonationPages)
 	.put(authMiddleware, editDonationPage);
 router.route('/page/:slug').get(getDonationPage);
+router.route('/page/id/:id').get(getDonationPageById);
 router.route('/page/:id').delete(authMiddleware, deleteDonationPage);
 
 //Donatons
-router.route('/').post(submitDonation).get(getAllDonations);
-// router.route("/all_donations").post(getAllDonations);
+router.route('/').post(submitDonation).get(getAllDonationPages);
+router.route('/users/:pageId').get(getDonationsByPageId);
+router.route('/users/count/:pageId').get(getCountDonationsByPageId);
 
 export default router;

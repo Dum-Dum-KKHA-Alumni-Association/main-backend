@@ -152,6 +152,7 @@ enum RegistrationStatus {
 
 enum PaymentStatus {
   INITIATED
+  COMPLETED
   PENDING
   SUCCESS
   FAILED

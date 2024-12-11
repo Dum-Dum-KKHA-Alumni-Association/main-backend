@@ -4,7 +4,7 @@ import asyncHandler from '../utils/asyncHandler';
 import prisma from '../db/prismaClient';
 import ApiResponse from '../utils/ApiResponse';
 import ApiError from '../utils/ApiError';
-import { initiatePay } from '../utils/payment-gateway';
+import { initiatePay } from '../utils/paymentGateway';
 
 export const createDonationPage = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
@@ -121,6 +121,25 @@ export const getDonationPage = asyncHandler(
 	}
 );
 
+export const getDonationPageById = asyncHandler(
+	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
+		const id = request.params.id;
+
+		console.log(id);
+		try {
+			const getDonationPage = await prisma.donationPage.findFirst({
+				where: {
+					id,
+				},
+			});
+
+			response.status(200).json(new ApiResponse(200, getDonationPage));
+		} catch (error) {
+			response.status(400).json(new ApiError(400, 'Error Happened', error));
+		}
+	}
+);
+
 export const deleteDonationPage = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
 		const id = request.params.id;
@@ -172,8 +191,7 @@ export const submitDonation = asyncHandler(
 				amount,
 				mobile: primaryNumber,
 			});
-			// await prisma.$transaction(
-			// 	async (prisma) => {
+
 			const donationDetails = await prisma.donation.create({
 				data: {
 					DonationPage: {
@@ -209,53 +227,6 @@ export const submitDonation = asyncHandler(
 			response
 				.status(200)
 				.json(new ApiResponse(200, paymentPageDetails, 'Payment is Initiated'));
-
-			// const payment = await prisma.payment.create({
-			// 	data: {
-			// 		merchantId: paymentPageDetails?.merchantId,
-			// 		merchantTransactionId: paymentPageDetails?.merchantTransactionId,
-			// 		amount,
-			// 	},
-			// });
-
-			// 	},
-			// 	{
-			// 		maxWait: 5000, // 5 seconds max wait to connect to prisma
-			// 		timeout: 10000, // 10 seconds
-			// 	}
-			// );
-
-			// const donationDetails = await prisma.donation.create({
-			// 	data: {
-			// 		DonationPage: {
-			// 			connect: {
-			// 				id: donationPageId,
-			// 			},
-			// 		},
-			// 		firstName,
-			// 		lastName,
-			// 		email,
-			// 		whatsappNumber,
-			// 		alternativeNumber,
-			// 		madyamikYear,
-			// 		gender,
-			// 		higherSecondaryYear,
-			// 		dateOfBirth,
-			// 		occupation,
-			// 		presentAddress,
-			// 		contactAddress,
-			// 		amount,
-			// 		Payment: {
-			// 			create: {
-			// 				merchantId: paymentPageDetails?.merchantId,
-			// 				merchantTransactionId: paymentPageDetails?.merchantTransactionId,
-			// 				amount,
-			// 			},
-			// 		},
-			// 	},
-			// });
-
-			// const paymentData = await
 		} catch (error) {
 			console.log(error);
 			response.status(400).json(new ApiError(400, 'Error Happened', error));
@@ -263,18 +234,37 @@ export const submitDonation = asyncHandler(
 	}
 );
 
-export const getAllDonations = asyncHandler(
+export const getDonationsByPageId = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
-		const id = request.params.id;
+		const pageId = request.params.pageId;
 
-		console.log(id);
+		console.log(pageId);
 		try {
-			const deleteDonationPage = await prisma.donationPage.delete({
+			const getAllDonations = await prisma.donation.findMany({
 				where: {
-					id,
+					donationPageId:pageId,
 				},
 			});
-			response.status(200).json(new ApiResponse(200, deleteDonationPage));
+			
+			response.status(200).json(new ApiResponse(200, getAllDonations));
+		} catch (error) {
+			response.status(400).json(new ApiError(400, 'Error Happened', error));
+		}
+	}
+);
+export const getCountDonationsByPageId = asyncHandler(
+	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
+		const pageId = request.params.pageId;
+
+		console.log(pageId);
+		try {
+			
+			const getDonationsCount = await prisma.donation.count({
+				where: {
+					donationPageId: pageId,
+				},
+			});
+			response.status(200).json(new ApiResponse(200, getDonationsCount));
 		} catch (error) {
 			response.status(400).json(new ApiError(400, 'Error Happened', error));
 		}
