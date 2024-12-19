@@ -12,9 +12,7 @@ const router = Router();
 // 	.route('/status/:merchantTransactionId')
 // 	// .get(checkPaymentStatus)
 // 	.post(checkPaymentStatus);
-router
-	.route('/status')
-	.post(checkPaymentGateWayStatus);
+router.route('/status').post(checkPaymentGateWayStatus);
 // router
 // 	.route('/status')
 // 	.post(checkPaymentStatusForm);

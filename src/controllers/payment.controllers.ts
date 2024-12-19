@@ -150,41 +150,69 @@ export const checkPaymentGateWayStatus = asyncHandler(
 				merchantTransactionId: body.transactionId,
 			});
 
-			// if (data && data.code === 'PAYMENT_SUCCESS') {
-			// await prisma.$transaction(async (prisma) => {
-			const paymentDetailsUpdate = await prisma.payment.update({
-				where: {
-					merchantTransactionId: body.transactionId,
-				},
-				data: {
-					success: data.success,
-					code: data.code,
-					message: data.message,
-					transactionId: data.data.transactionId,
-					state: data.data.state,
-					responseCode: data.data.responseCode,
-					paymentType: data.data.paymentInstrument.type,
-					cardType: data.data.paymentInstrument.cardType,
-					pgTransactionId: data.data.paymentInstrument.pgTransactionId,
-					bankTransactionId: data.data.paymentInstrument.bankTransactionId,
-					pgAuthorizationCode: data.data.paymentInstrument.pgAuthorizationCode,
-					arn: data.data.paymentInstrument.arn,
-					bankId: data.data.paymentInstrument.bankId,
-					brn: data.data.paymentInstrument.brn,
-					utr: data.data.paymentInstrument.utr,
-					pgServiceTransactionId:
-						data.data.paymentInstrument.pgServiceTransactionId,
-					responseDescription: data.data.responseCodeDescription,
-				},
-			});
-			console.log(paymentDetailsUpdate);
-			response.redirect(
-				`${process.env.FRONTEND_ENDPOINT_URL}/donation/success`
-			);
+			if (data && data.code === 'PAYMENT_SUCCESS') {
+				const paymentDetailsUpdate = await prisma.payment.update({
+					where: {
+						merchantTransactionId: body.transactionId,
+					},
+					data: {
+						success: data.success,
+						code: data.code,
+						message: data.message,
+						transactionId: data.data.transactionId,
+						state: data.data.state,
+						responseCode: data.data.responseCode,
+						paymentType: data.data.paymentInstrument.type,
+						cardType: data.data.paymentInstrument.cardType,
+						pgTransactionId: data.data.paymentInstrument.pgTransactionId,
+						bankTransactionId: data.data.paymentInstrument.bankTransactionId,
+						pgAuthorizationCode:
+							data.data.paymentInstrument.pgAuthorizationCode,
+						arn: data.data.paymentInstrument.arn,
+						bankId: data.data.paymentInstrument.bankId,
+						brn: data.data.paymentInstrument.brn,
+						utr: data.data.paymentInstrument.utr,
+						pgServiceTransactionId:
+							data.data.paymentInstrument.pgServiceTransactionId,
+						responseDescription: data.data.responseCodeDescription,
+						Donation: {
+							update: {
+								DonationPage: {
+									update: {
+										collectedAmount: data.data.amount,
+									},
+								},
+							},
+						},
+					},
+				});
+				console.log(paymentDetailsUpdate);
 
-			
+				console.log(paymentDetailsUpdate);
+				if (data.success === true) {
+					response.redirect(
+						`${process.env.FRONTEND_ENDPOINT_URL}/donation/success`
+					);
+				} else {
+					response.redirect(
+						`${process.env.FRONTEND_ENDPOINT_URL}/donation/failed`
+					);
+				}
+			} else {
+				const paymentDetailsUpdate = await prisma.payment.delete({
+					where: {
+						merchantTransactionId: body.transactionId,
+					},
+				});
+
+				console.log(paymentDetailsUpdate);
+				response.redirect(
+					`${process.env.FRONTEND_ENDPOINT_URL}/donation/failed`
+				);
+			}
 		} catch (error) {
-			response.status(400).json(new ApiError(400, 'Error Happened', error));
+			console.log(error);
+			response.redirect(`${process.env.FRONTEND_ENDPOINT_URL}/donation/failed`);
 		}
 	}
 );

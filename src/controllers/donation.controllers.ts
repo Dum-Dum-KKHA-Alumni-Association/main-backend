@@ -38,7 +38,7 @@ export const createDonationPage = asyncHandler(
 					new ApiResponse(
 						200,
 						donationDetails,
-						'Donation Page Successfully created'
+						'New Donation Page successfully created'
 					)
 				);
 		} catch (error) {
@@ -50,11 +50,38 @@ export const createDonationPage = asyncHandler(
 export const getAllDonationPages = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
 		try {
-			const getDonationPages = await prisma.donationPage.findMany();
+			const getDonationPages = await prisma.donationPage.findMany({
+				select: {
+					id: true,
+					title: true,
+					slug: true,
+					description: true,
+					thumbnail: true,
+					targetAmount: true,
+					collectedAmount: true,
+					expirationDate: true,
+					status: true,
+					listOfDonors: {
+						where: {
+							Payment: {
+								state: 'COMPLETED',
+							},
+						},
+						select: {
+							Payment: {
+								select: {
+									state: true,
+									amount: true,
+								},
+							},
+						},
+					},
+				},
+			});
 
 			response
 				.status(200)
-				.json(new ApiResponse(200, getDonationPages, 'Get All Donation Pages'));
+				.json(new ApiResponse(200, getDonationPages, 'Get Al Donation Pages'));
 		} catch (error) {
 			response.status(400).json(new ApiError(400, 'Error Happened', error));
 		}
@@ -127,9 +154,32 @@ export const getDonationPageById = asyncHandler(
 
 		console.log(id);
 		try {
-			const getDonationPage = await prisma.donationPage.findFirst({
+			const getDonationPage = await prisma.donationPage.findUnique({
 				where: {
 					id,
+				},
+				select: {
+					id: true,
+					title: true,
+					slug: true,
+					description: true,
+					thumbnail: true,
+					listOfDonors: {
+						where: {
+							Payment: {
+								state: 'COMPLETED',
+							},
+						},
+						select: {
+							id: true,
+						},
+					},
+					targetAmount: true,
+					collectedAmount: true,
+					expirationDate: true,
+					status: true,
+					createdAt: true,
+					updatedAt: true,
 				},
 			});
 
@@ -176,7 +226,6 @@ export const submitDonation = asyncHandler(
 			email,
 			primaryNumber,
 			whatsappNumber,
-			gender,
 			madyamikYear,
 			higherSecondaryYear,
 			dateOfBirth,
@@ -205,7 +254,6 @@ export const submitDonation = asyncHandler(
 					primaryNumber,
 					whatsappNumber,
 					madyamikYear,
-					gender,
 					higherSecondaryYear,
 					dateOfBirth,
 					occupation,
@@ -234,7 +282,7 @@ export const submitDonation = asyncHandler(
 	}
 );
 
-export const getDonationsByPageId = asyncHandler(
+export const getAllDonationsByPageId = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
 		const pageId = request.params.pageId;
 
@@ -242,10 +290,13 @@ export const getDonationsByPageId = asyncHandler(
 		try {
 			const getAllDonations = await prisma.donation.findMany({
 				where: {
-					donationPageId:pageId,
+					donationPageId: pageId,
+					Payment: {
+						state: 'COMPLETED',
+					},
 				},
 			});
-			
+
 			response.status(200).json(new ApiResponse(200, getAllDonations));
 		} catch (error) {
 			response.status(400).json(new ApiError(400, 'Error Happened', error));
@@ -258,13 +309,49 @@ export const getCountDonationsByPageId = asyncHandler(
 
 		console.log(pageId);
 		try {
-			
 			const getDonationsCount = await prisma.donation.count({
 				where: {
 					donationPageId: pageId,
 				},
 			});
 			response.status(200).json(new ApiResponse(200, getDonationsCount));
+		} catch (error) {
+			response.status(400).json(new ApiError(400, 'Error Happened', error));
+		}
+	}
+);
+
+export const getDonorDetails = asyncHandler(
+	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
+		const donorId = request.params.donorId;
+
+		console.log(donorId);
+		try {
+			const getDonorDetails = await prisma.donation.findUnique({
+				where: {
+					id: donorId,
+				},
+				select: {
+					id: true,
+					firstName: true,
+					lastName: true,
+					email: true,
+					primaryNumber: true,
+					whatsappNumber: true,
+					dateOfBirth: true,
+					madyamikYear: true,
+					higherSecondaryYear: true,
+					presentAddress: true,
+					contactAddress: true,
+					occupation: true,
+					amount: true,
+					donationPageId: true,
+					Payment: true,
+					createdAt: true,
+					updatedAt: true,
+				},
+			});
+			response.status(200).json(new ApiResponse(200, getDonorDetails));
 		} catch (error) {
 			response.status(400).json(new ApiError(400, 'Error Happened', error));
 		}

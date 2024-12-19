@@ -6,7 +6,7 @@
 
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["windows", "rhel-openssl-3.0.x"]
+  binaryTargets = ["windows", "rhel-openssl-3.0.x","debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -21,7 +21,6 @@ model User {
   email                  String     @unique
   password               String
   dateOfBirth            DateTime
-  gender                 Gender
   madyamikYear           Int
   higherSecondaryYear    Int
   primaryNumber          Int
@@ -44,7 +43,7 @@ model DonationPage {
   title           String
   slug            String         @unique
   description     String
-  thumbnail       String
+  thumbnail       String?
   listOfDonors    Donation[]
   targetAmount    Int
   collectedAmount Int?           @default(0)
@@ -62,7 +61,6 @@ model Donation {
   primaryNumber       String
   whatsappNumber      String
   dateOfBirth         DateTime
-  gender              Gender
   madyamikYear        String
   higherSecondaryYear String
   presentAddress      String
@@ -71,7 +69,7 @@ model Donation {
   amount              Int
   donationPageId      String?
   DonationPage        DonationPage? @relation(fields: [donationPageId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  paymentId           String?
+  paymentId           String? @unique
   Payment             Payment?      @relation(fields: [paymentId], references: [id])
   createdAt           DateTime?     @default(now())
   updatedAt           DateTime?     @updatedAt
@@ -99,13 +97,13 @@ model Attendee {
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
   userId    String
-  paymentId String?
+  paymentId String? @unique
   Payment   Payment?  @relation(fields: [paymentId], references: [id])
   eventsId  String
 }
 
 model Payment {
-  id                    String        @id @default(cuid())
+  id                    String        @id @default(uuid())
   success               Boolean? // Indicates if the payment API call was successful
   code                  String? // Status code of the payment response (e.g., PAYMENT_SUCCESS, PAYMENT_ERROR)
   message               String? // Response message from the gateway
@@ -133,10 +131,11 @@ model Payment {
   // Netbanking-specific fields
   pgServiceTransactionId String? // Service transaction ID for net banking
 
-  createdAt  DateTime? @default(now())
-  updatedAt  DateTime? @updatedAt
-  Donation Donation[]
-  Attendee Attendee[]
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @updatedAt
+  Donation  Donation?
+ 
+  Attendee  Attendee?
 }
 
 enum EventMode {
@@ -169,10 +168,4 @@ enum Role {
   USER
   ADMIN
   EDITOR
-}
-
-enum Gender {
-  MALE
-  FEMALE
-  OTHERS
 }

@@ -9,8 +9,10 @@ export const initiatePay = async ({
 	amount: number;
 	mobile: string;
 }) => {
-	const merchantTransactionId = 'MT-' + uuidv4().toString().slice(-6);
-	const merchantUserId = 'MUID-' + uuidv4().toString().slice(-6);
+	const merchantTransactionId = 'MT-' + uuidv4().toString().slice(0, 30);
+	const merchantUserId = 'MUID-' + uuidv4().toString().slice(0, 30);
+	console.log('merchantTransactionId', merchantTransactionId);
+	console.log('merchantUserId', merchantTransactionId);
 
 	const payload = {
 		merchantId: process.env.PHONEPE_MERCHANT_ID,
@@ -22,7 +24,7 @@ export const initiatePay = async ({
 		redirectUrl: `${process.env.BACKEND_ENDPOINT_URL}/payment/status`,
 		redirectMode: 'POST',
 		// redirectMode: 'REDIRECT',
-		callbackUrl: `http://localhost:8000/api/v1/payment/phonepe-callback`,
+		callbackUrl: `${process.env.BACKEND_ENDPOINT_URL}/payment/phonepe-callback`,
 		mobileNumber: mobile,
 		paymentInstrument: {
 			type: 'PAY_PAGE',
