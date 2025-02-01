@@ -5,6 +5,8 @@ import userRouter from './routes/user.routes';
 import donationRouter from './routes/donation.routes';
 import paymentRouter from './routes/payment.routes';
 import uploadRouter from './routes/upload.routes';
+import eventsRouter from './routes/events.routes';
+import bookingRouter from './routes/booking.routes';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 
@@ -29,6 +31,8 @@ app.use(cookieParser());
 
 // Routes Declaration
 app.use('/api/v1/user', userRouter);
+app.use('/api/v1/events', eventsRouter);
+app.use('/api/v1/booking', bookingRouter);
 app.use('/api/v1/donation', donationRouter);
 app.use('/api/v1/payment', paymentRouter);
 app.use('/api/v1/upload', uploadRouter);

@@ -10,7 +10,7 @@ export const createDonationPage = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
 		const {
 			title,
-			slug,
+
 			description,
 			thumbnail,
 			targetAmount,
@@ -22,7 +22,6 @@ export const createDonationPage = asyncHandler(
 			const donationDetails = await prisma.donationPage.create({
 				data: {
 					title,
-					slug,
 					description,
 					thumbnail,
 					targetAmount,
@@ -54,7 +53,6 @@ export const getAllDonationPages = asyncHandler(
 				select: {
 					id: true,
 					title: true,
-					slug: true,
 					description: true,
 					thumbnail: true,
 					targetAmount: true,
@@ -93,7 +91,6 @@ export const editDonationPage = asyncHandler(
 		const {
 			id,
 			title,
-			slug,
 			description,
 			thumbnail,
 			targetAmount,
@@ -109,7 +106,7 @@ export const editDonationPage = asyncHandler(
 				},
 				data: {
 					title,
-					slug,
+
 					description,
 					thumbnail,
 					targetAmount,
@@ -131,25 +128,6 @@ export const editDonationPage = asyncHandler(
 
 export const getDonationPage = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
-		const slug = request.params.slug;
-
-		console.log(slug);
-		try {
-			const getDonationPage = await prisma.donationPage.findFirst({
-				where: {
-					slug,
-				},
-			});
-
-			response.status(200).json(new ApiResponse(200, getDonationPage));
-		} catch (error) {
-			response.status(400).json(new ApiError(400, 'Error Happened', error));
-		}
-	}
-);
-
-export const getDonationPageById = asyncHandler(
-	async (request: AuthenticatedRequest, response: Response): Promise<void> => {
 		const id = request.params.id;
 
 		console.log(id);
@@ -161,7 +139,7 @@ export const getDonationPageById = asyncHandler(
 				select: {
 					id: true,
 					title: true,
-					slug: true,
+
 					description: true,
 					thumbnail: true,
 					listOfDonors: {

@@ -8,7 +8,6 @@ import {
 	getAllDonationPages,
 	getAllDonationsByPageId,
 	getDonationPage,
-	getDonationPageById,
 	getDonorDetails,
 	submitDonation,
 } from '../controllers/donation.controllers';
@@ -17,7 +16,7 @@ const router = Router();
 
 ///General Routes
 router.route('/page/:slug').get(getDonationPage);
-router.route('/page/id/:id').get(getDonationPageById);
+// router.route('/page/id/:id').get(getDonationPageById);
 
 /// Admin Panels Routes
 router
