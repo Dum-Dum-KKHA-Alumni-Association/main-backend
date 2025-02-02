@@ -9,6 +9,11 @@ import eventsRouter from './routes/events.routes';
 import bookingRouter from './routes/booking.routes';
 import cors from 'cors';
 import bodyParser from 'body-parser';
+import passport from 'passport';
+import {
+	localAuthMiddleware,
+	passportLocalStrategy,
+} from './middleware/auth.middleware';
 
 dotenv.config();
 
@@ -27,11 +32,15 @@ app.use(express.json({ limit: '16kb' })); //accept JSON data
 app.use(express.urlencoded({ extended: true, limit: '16kb' }));
 app.use(express.static('public'));
 app.use(cookieParser());
-// app.use(clerkMiddleware());
+
+///Passport for Authentication
+passportLocalStrategy();
+
+app.use(passport.initialize());
 
 // Routes Declaration
 app.use('/api/v1/user', userRouter);
-app.use('/api/v1/events', eventsRouter);
+app.use('/api/v1/events', localAuthMiddleware, eventsRouter);
 app.use('/api/v1/booking', bookingRouter);
 app.use('/api/v1/donation', donationRouter);
 app.use('/api/v1/payment', paymentRouter);

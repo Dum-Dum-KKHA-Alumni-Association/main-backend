@@ -79,7 +79,7 @@ export const getAllDonationPages = asyncHandler(
 
 			response
 				.status(200)
-				.json(new ApiResponse(200, getDonationPages, 'Get Al Donation Pages'));
+				.json(new ApiResponse(200, getDonationPages, 'Get All Donation Pages'));
 		} catch (error) {
 			response.status(400).json(new ApiError(400, 'Error Happened', error));
 		}

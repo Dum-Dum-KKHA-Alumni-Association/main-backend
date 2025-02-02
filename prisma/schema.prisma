@@ -19,18 +19,18 @@ model User {
   id                  String    @id @unique @default(uuid())
   fullName            String
   email               String    @unique
-  password            String?
+  password            String
   googleId            String?
   provider            String?
-  madyamikYear        String
-  higherSecondaryYear String
-  primaryNumber       String
+  madyamikYear        String?
+  higherSecondaryYear String?
+  primaryNumber       String?
   whatsappNumber      String?
   role                Role      @default(USER)
   permanentAddress    String?
   deliveryAddress     String?
-  dateOfBirth         DateTime
-  bloodGroup          String
+  dateOfBirth         DateTime?
+  bloodGroup          String?
   occupation          String?
   membershipId        String?
   linkedin            String?
@@ -118,7 +118,7 @@ model Booking {
   transactionProof   String?
   paymentStatus      PaymentStatus
   userId             String
-  User               User          @relation(fields: [userId], references: [id])
+  User               User ?         @relation(fields: [userId], references: [id])
   createdAt          DateTime?     @default(now())
   updatedAt          DateTime?     @updatedAt
 }
