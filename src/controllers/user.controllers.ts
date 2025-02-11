@@ -1,21 +1,16 @@
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import asyncHandler from '../utils/asyncHandler';
 import { AuthenticatedRequest } from '../types/apiRequest';
 import prisma from '../db/prismaClient';
 import ApiResponse from '../utils/ApiResponse';
 import ApiError from '../utils/ApiError';
-import { comparePassword, passwordHashed } from '../utils/hasher';
-import { generateAccessToken } from '../middleware/jwtAuth.middleware';
-
-export const getUserDetails = asyncHandler(
-	async (request: AuthenticatedRequest, response: Response) => {
-		response.json({ message: 'User Protected route' });
-	}
-);
+import { passwordHashed } from '../utils/hasher';
+import { User } from '@prisma/client';
+import { resetJwtToken, verifyJwtToken } from '../utils/token';
+import nodemailer from 'nodemailer';
 
 export const registerUser = asyncHandler(
 	async (request: AuthenticatedRequest, response: Response) => {
-		// const userId = request.auth?.userId;
 		const { fullName, email, password } = request.body;
 
 		try {
@@ -27,83 +22,242 @@ export const registerUser = asyncHandler(
 					password: hashedPassword,
 				},
 			});
-			response.json(new ApiResponse(200, user, 'User created Successful'));
+			response.json(new ApiResponse(200, user, 'User created Successfully'));
 		} catch (error) {
 			response.status(400).json(new ApiError(400, 'Error Happened', error));
 		}
 	}
 );
 
-export const loginUser = asyncHandler(
-	async (request: AuthenticatedRequest, response: Response) => {
-		// const userId = request.auth?.userId;
+export const loginUser = async (request: Request, response: Response) => {
+	console.log(request.user, request.session);
 
-		const { email, password } = request.body;
+	if (request.user) {
+		response.json(
+			new ApiResponse(
+				200,
+				{
+					user: request.user,
+					session: request.session,
+				},
+				'User logged In Successfully'
+			)
+		);
+	} else {
+		response.sendStatus(401);
+	}
+};
+
+export const loginAdminUser = asyncHandler(
+	async (request: Request, response: Response) => {
+		const prismaUser = request.user as User;
+		if (prismaUser && prismaUser.role === 'ADMIN') {
+			response.json(
+				new ApiResponse(
+					200,
+					{
+						user: request.user,
+						session: request.session,
+					},
+					'User logged In Successfully'
+				)
+			);
+		} else {
+			response.sendStatus(401);
+		}
+	}
+);
+
+export const logoutUser = asyncHandler(
+	async (request: Request, response: Response) => {
+		request.logout((err) => {
+			if (err) {
+				response.status(500).json({ message: 'Logout failed' });
+			}
+
+			// Destroy the session
+			request.session.destroy((err) => {
+				if (err) {
+					return response
+						.status(500)
+						.json({ message: 'Error destroying session' });
+				}
+
+				// Clear the cookie
+				response.clearCookie('connect.sid'); // Or whatever your cookie name is
+
+				// Send response
+				response.status(200).json({ message: 'Logged out successfully' });
+			});
+		});
+	}
+);
+
+export const userProfile = asyncHandler(
+	async (request: Request, response: Response) => {
+		response.json(
+			new ApiResponse(
+				200,
+				{
+					user: request.user,
+					session: request.session,
+				},
+				'User logged In Successfully'
+			)
+		);
+	}
+);
+
+export const updateUserProfile = asyncHandler(
+	async (request: Request, response: Response) => {
+		const prismaUser = request.user as User;
+		const {
+			id,
+			fullName,
+			email,
+			password,
+			googleId,
+			provider,
+			madyamikYear,
+			higherSecondaryYear,
+			primaryNumber,
+			whatsappNumber,
+			role,
+			permanentAddress,
+			deliveryAddress,
+			dateOfBirth,
+			bloodGroup,
+			occupation,
+			membershipId,
+			linkedin,
+			instagram,
+			twitter,
+			facebook,
+			refreshToken,
+		} = request.body;
 
 		try {
+			const user = await prisma.user.update({
+				where: {
+					id: prismaUser.id,
+				},
+				data: {
+					id,
+					fullName,
+					email,
+					password,
+					googleId,
+					provider,
+					madyamikYear,
+					higherSecondaryYear,
+					primaryNumber,
+					whatsappNumber,
+					role,
+					permanentAddress,
+					deliveryAddress,
+					dateOfBirth,
+					bloodGroup,
+					occupation,
+					membershipId,
+					linkedin,
+					instagram,
+					twitter,
+					facebook,
+					refreshToken,
+				},
+			});
+			response
+				.status(200)
+				.json(new ApiResponse(200, user, 'New event successfully created'));
+		} catch (error) {
+			response.status(400).json(new ApiError(400, 'Error Happened', error));
+		}
+	}
+);
+
+//Forget Password
+
+export const forgetPassword = asyncHandler(
+	async (request: Request, response: Response) => {
+		const { email } = request.body;
+
+		if (!email) {
+			response.status(400).json({ error: 'Please Enter field' });
+		}
+
+		if (typeof email === 'string') {
 			const user = await prisma.user.findUnique({
 				where: {
 					email,
 				},
 			});
 
-			if (!user)
-				response.status(401).json(new ApiError(401, 'Incorrect Email'));
-
-			const isPasswordMatch = await comparePassword(password, user!.password);
-			// const isPasswordMatch = user?.password === password ? true : false;
-
-			if (isPasswordMatch) {
-				const accessToken = await generateAccessToken(user);
-
-				const options = {
-					httpOnly: true,
-					secure: true,
-				};
-
-				response
-					.status(200)
-					.cookie('accessToken', accessToken, options)
-					// .cookie('refreshToken', refreshToken, options)
-					.json(
-						new ApiResponse(
-							200,
-							{
-								user,
-								accessToken,
-
-								FRONTEND_URL: process.env.FRONTEND_URL,
-							},
-							'User logged In Successfully'
-						)
-					);
-			} else {
-				response.status(400).json(new ApiError(400, 'Incorrect Password'));
+			if (!user) {
+				response.status(400).json({ error: 'Email is not registered' });
 			}
-		} catch (error) {
-			response.status(400).json(new ApiError(400, 'Error Happened', error));
+
+			const token = resetJwtToken(user!.id);
+
+			try {
+				//Connect SMPT
+				const transporter = await nodemailer.createTransport({
+					host: 'smtp.gmail.com',
+					port: 465,
+					secure: true,
+					auth: {
+						// TODO: replace `user` and `pass` values from <https://forwardemail.net>
+						user: 'tejodeepmitra@gmail.com',
+						pass: 'mnscfgbaxtsxcced',
+					},
+				});
+
+				const info = await transporter.sendMail({
+					to: email,
+					subject: 'Password Reset',
+					text: 'Your new password',
+					html: `<h1>Your reset LInk</h1> <br><a href='http://localhost:3000/reset-password/${token}'><span>Reset LInk</span></a>`,
+				});
+
+				response.status(200).json(info);
+			} catch (error) {
+				response.status(200).json(error);
+			}
+		} else {
+			response.status(200).json({ error: 'Please give any string value' });
 		}
 	}
 );
-export const logoutUser = asyncHandler(
-	async (request: AuthenticatedRequest, response: Response) => {
-		// const userId = request.auth?.userId;
 
-		response.json({ message: 'User Protected route' });
-	}
-);
-export const registerAdminUser = asyncHandler(
-	async (request: AuthenticatedRequest, response: Response) => {
-		// const userId = request.auth?.userId;
+//Reset Password Link
 
-		response.json({ message: 'User Protected route' });
-	}
-);
+export const resetLink = asyncHandler(
+	async (request: Request, response: Response) => {
+		const { userId, password } = request.body;
 
-export const loginAdminUser = asyncHandler(
-	async (request: AuthenticatedRequest, response: Response) => {
-		// const userId = request.auth?.userId;
+		if (!password) {
+			response.status(400).json({ error: 'Please Enter field' });
+		}
 
-		response.json({ message: 'User Protected route' });
+		if (typeof password === 'string') {
+			const { id } = (await verifyJwtToken(userId)) as { id: string };
+
+			try {
+				const user = await prisma.user.update({
+					where: {
+						id: id as string,
+					},
+					data: {
+						password: await passwordHashed(password),
+					},
+				});
+
+				response.status(200).json(user);
+			} catch (error) {
+				console.log(error);
+				response.status(400).json({ error: 'Password not Updated' });
+			}
+		} else {
+			response.status(400).json({ error: 'Please give only string value' });
+		}
 	}
 );

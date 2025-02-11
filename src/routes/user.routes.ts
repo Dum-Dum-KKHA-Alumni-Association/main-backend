@@ -1,28 +1,33 @@
 import { Router } from 'express';
-// import { loginAdminUser, loginUser } from "../controllers/user.controllers";
-
 import {
-	getUserDetails,
+	forgetPassword,
 	loginAdminUser,
 	loginUser,
 	logoutUser,
-	registerAdminUser,
 	registerUser,
+	resetLink,
+	updateUserProfile,
+	userProfile,
 } from '../controllers/user.controllers';
 
-import { localAuthMiddleware } from '../middleware/auth.middleware';
+import {
+	isAuthenticated,
+	localAuthMiddleware,
+} from '../middleware/auth.middleware';
 
 const router = Router();
 
-//General Access
 router.route('/login').post(localAuthMiddleware, loginUser);
-router.route('/signup').post(registerUser);
-router.route('/logout').post(logoutUser);
+router.route('/adminLogin').post(localAuthMiddleware, loginAdminUser);
 
-//Admin Access
-router.route('/adminLogin').post(loginAdminUser);
-router.route('/adminSignup').post(registerAdminUser);
+router.route('/register').post(registerUser);
 router.route('/logout').post(logoutUser);
-router.route('/:userId').get(getUserDetails);
+router
+	.route('/profile')
+	.get(isAuthenticated, userProfile)
+	.put(isAuthenticated, updateUserProfile);
+
+router.route('/forgetPassword').post(forgetPassword);
+router.route('/resetLink').put(resetLink);
 
 export default router;

@@ -9,11 +9,12 @@ import {
 	getEventsDetails,
 	updateAnEvent,
 } from '../controllers/events.controllers';
+import { isAuthenticated } from '../middleware/auth.middleware';
 
 const router = Router();
 
 ///General Routes
-router.route('/').post(authMiddleware, createAnEvent).get(getEventsDetails);
+router.route('/').post(isAuthenticated, createAnEvent).get(getEventsDetails);
 router
 	.route('/:id')
 	.put(authMiddleware, updateAnEvent)

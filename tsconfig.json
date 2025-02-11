@@ -123,6 +123,6 @@
 		"**/*.ts",
 		"build/types/**/*.ts",
     "prisma"
-	],
+, "src/emails"	],
 	"exclude": ["node_modules", "dist"]
 }

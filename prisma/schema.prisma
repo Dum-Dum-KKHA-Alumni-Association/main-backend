@@ -43,46 +43,6 @@ model User {
   Booking             Booking[]
 }
 
-model DonationPage {
-  id              String         @id @unique @default(uuid())
-  title           String
-  description     String
-  thumbnail       String?
-  listOfDonors    Donation[]
-  targetAmount    Int
-  collectedAmount Int?           @default(0)
-  expirationDate  DateTime
-  status          DonationStatus @default(ACTIVE)
-  createdAt       DateTime?      @default(now())
-  updatedAt       DateTime?      @updatedAt
-}
-
-model Donation {
-  id                  String        @id @unique @default(uuid())
-  firstName           String
-  lastName            String
-  email               String
-  primaryNumber       String
-  whatsappNumber      String
-  dateOfBirth         DateTime
-  madyamikYear        String
-  higherSecondaryYear String
-  presentAddress      String
-  contactAddress      String
-  occupation          String
-  amount              Int
-  merchandiseType     String?
-  merchandiseSize     String?
-  merchandiseSleeves  String?
-  foodPreference      String?
-  donationPageId      String?
-  DonationPage        DonationPage? @relation(fields: [donationPageId], references: [id], onDelete: SetNull, onUpdate: SetNull)
-  paymentId           String?       @unique
-  Payment             Payment?      @relation(fields: [paymentId], references: [id])
-  createdAt           DateTime?     @default(now())
-  updatedAt           DateTime?     @updatedAt
-}
-
 model Event {
   id               String      @id @unique @default(uuid())
   title            String
@@ -98,7 +58,6 @@ model Event {
   foodAvailable    String
   eventPaymentType String
   eventPaymentMode String
-  // attendee         User[]
   createdAt        DateTime?   @default(now())
   updatedAt        DateTime?   @updatedAt
   Booking          Booking[]
@@ -118,22 +77,10 @@ model Booking {
   transactionProof   String?
   paymentStatus      PaymentStatus
   userId             String
-  User               User ?         @relation(fields: [userId], references: [id])
+  User               User?         @relation(fields: [userId], references: [id])
   createdAt          DateTime?     @default(now())
   updatedAt          DateTime?     @updatedAt
 }
-
-// model Attendee {
-//   id        String    @id @unique @default(uuid())
-//   UserId    User      @relation(fields: [userId], references: [id])
-//   EventsId  Events    @relation(fields: [eventsId], references: [id])
-//   createdAt DateTime? @default(now())
-//   updatedAt DateTime? @updatedAt
-//   userId    String
-//   paymentId String?   @unique
-//   Payment   Payment?  @relation(fields: [paymentId], references: [id])
-//   eventsId  String
-// }
 
 model Payment {
   id                    String        @id @default(uuid())
@@ -166,8 +113,6 @@ model Payment {
 
   createdAt DateTime? @default(now())
   updatedAt DateTime? @updatedAt
-  Donation  Donation?
-
   // Attendee Attendee?
 }
 
