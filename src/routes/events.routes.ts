@@ -1,6 +1,4 @@
 import { Router } from 'express';
-
-import authMiddleware from '../middleware/clerk.middleware';
 import {
 	bookAnEvent,
 	createAnEvent,
@@ -17,9 +15,9 @@ const router = Router();
 router.route('/').post(isAuthenticated, createAnEvent).get(getEventsDetails);
 router
 	.route('/:id')
-	.put(authMiddleware, updateAnEvent)
+	.put(updateAnEvent)
 	.get(getAnEventsDetails)
-	.delete(authMiddleware, deleteAnEvent);
+	.delete(deleteAnEvent);
 
 router.route('/booking').post(bookAnEvent);
 

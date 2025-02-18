@@ -1,6 +1,7 @@
 import * as dotenv from 'dotenv';
 import express, { Application } from 'express';
 import cookieParser from 'cookie-parser';
+import authRouter from './routes/auth.routes';
 import userRouter from './routes/user.routes';
 // import donationRouter from './routes/donation.routes';
 import paymentRouter from './routes/payment.routes';
@@ -10,8 +11,9 @@ import bookingRouter from './routes/booking.routes';
 import cors from 'cors';
 import bodyParser from 'body-parser';
 import passport from 'passport';
-import { passportLocalStrategy } from './middleware/auth.middleware';
+
 import session from 'express-session';
+import { initializePassportStrategies } from './config/passport.config';
 
 dotenv.config();
 
@@ -45,14 +47,15 @@ app.use(
 		cookie: { secure: false, httpOnly: true, maxAge: 12000000 },
 	})
 );
-passportLocalStrategy();
+initializePassportStrategies();
 app.use(passport.initialize());
 app.use(passport.session());
 app.enable('trust proxy');
 
 // Routes Declaration
+app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/user', userRouter);
-app.use('/api/v1/events', eventsRouter);
+app.use('/api/v1/event', eventsRouter);
 app.use('/api/v1/booking', bookingRouter);
 app.use('/api/v1/payment', paymentRouter);
 app.use('/api/v1/upload', uploadRouter);

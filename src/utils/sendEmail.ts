@@ -1,69 +1,43 @@
 'use server';
-
 import nodemailer from 'nodemailer';
-import { render } from '@react-email/render';
-import ContactUsEmail from '../emails/ContactUsEmail';
-import ForOwnEmail from '../emails/ForOwnEmail';
+import { render } from '@react-email/components';
 
-export const sendEmailActions = async (formData: {
-	companyName?: string | undefined;
-	additionalMessage?: string | undefined;
-	firstName: string;
-	email: string;
-	lastName: string;
-}) => {
-	const body = formData;
-	console.log(body);
+import nodemailer_config from '../config/nodemailer.config';
+import ForgetPassportEmail from '../emails/ForgetPassportEmail';
 
+const transporter = nodemailer.createTransport({
+	host: nodemailer_config.host,
+	port: nodemailer_config.port,
+	secure: nodemailer_config.secure, // Use `true` for port 465, `false` for all other ports
+	auth: {
+		user: nodemailer_config.auth.user,
+		pass: nodemailer_config.auth.password,
+	},
+});
+
+interface SenderEmailProps {
+	receiverEmail: string;
+	userFirstName: string;
+	token: string;
+}
+
+export const forgotPasswordEmail = async ({
+	receiverEmail,
+	userFirstName,
+	token,
+}: SenderEmailProps) => {
 	try {
-		const transporter = nodemailer.createTransport({
-			host: 'smtp.hostinger.com',
-			port:
-				process.env.NODEMAILER_PORT === undefined
-					? process.env.NODEMAILER_PORT
-					: 465,
-			secure: true, // Use `true` for port 465, `false` for all other ports
-			auth: {
-				user: process.env.NODEMAILER_USERNAME,
-				pass: process.env.NODEMAILER_PASSWORD,
-			},
-		});
-
 		// send mail with defined transport object
-		const forClient = transporter.sendMail({
-			from: `business@webflexrr.com <business@webflexrr.com>`, // sender address
-			to: body.email, // list of receivers
-			subject: 'Thanks for Contacted Us', // Subject line
-
-			// text: "Hello world?", // plain text body
-			html: await render(
-				ContactUsEmail({
-					firstName: body.firstName,
-				}),
-				{ pretty: true }
-			),
+		const info = await transporter.sendMail({
+			from: nodemailer_config.senderFrom, // sender address
+			to: receiverEmail, // list of receivers
+			subject: 'DDKKHAA Password Reset Request', // Subject line
+			// html: `<h1>Your reset LInk</h1> <br><a href='http://localhost:3000/reset-password/${token}'><span>Reset LInk</span></a>`,
+			html: await render(ForgetPassportEmail({ token, userFirstName })),
 		});
 
-		const forOwn = await transporter.sendMail({
-			from: `business@webflexrr.com <business@webflexrr.com>`, // sender address
-			to: `business@webflexrr.com`, // list of receivers
-			subject: 'A new prospect send a message', // Subject line
-			html: await render(
-				ForOwnEmail({
-					firstName: body.firstName,
-					lastName: body.lastName,
-					email: body.email,
-					companyName: body.companyName!,
-					additionalMessage: body.additionalMessage!,
-				}),
-				{ pretty: true }
-			),
-		});
-
-		console.log(forClient);
-		console.log(forOwn);
-
-		return forClient;
+		console.log(info.messageId);
+		return info;
 	} catch (error) {
 		console.log(error);
 		return error;

@@ -4,6 +4,7 @@ import {
 	loginAdminUser,
 	loginUser,
 	logoutUser,
+	refreshToken,
 	registerUser,
 	resetLink,
 	updateUserProfile,
@@ -12,6 +13,7 @@ import {
 
 import {
 	isAuthenticated,
+	jwtAuthMiddleware,
 	localAuthMiddleware,
 } from '../middleware/auth.middleware';
 
@@ -19,15 +21,16 @@ const router = Router();
 
 router.route('/login').post(localAuthMiddleware, loginUser);
 router.route('/adminLogin').post(localAuthMiddleware, loginAdminUser);
+router.route('/refresh-token').post(refreshToken);
 
 router.route('/register').post(registerUser);
 router.route('/logout').post(logoutUser);
 router
 	.route('/profile')
-	.get(isAuthenticated, userProfile)
+	.get(jwtAuthMiddleware, userProfile)
 	.put(isAuthenticated, updateUserProfile);
 
-router.route('/forgetPassword').post(forgetPassword);
-router.route('/resetLink').put(resetLink);
+router.route('/forget-password').post(forgetPassword);
+router.route('/reset-link').put(resetLink);
 
 export default router;

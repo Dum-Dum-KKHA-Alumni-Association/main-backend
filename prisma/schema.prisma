@@ -17,11 +17,11 @@ datasource db {
 
 model User {
   id                  String    @id @unique @default(uuid())
-  fullName            String
+  fullName                String
   email               String    @unique
-  password            String
-  googleId            String?
-  provider            String?
+  password            String?
+  googleId            String?   @unique
+  avatar              String?
   madyamikYear        String?
   higherSecondaryYear String?
   primaryNumber       String?
@@ -40,6 +40,7 @@ model User {
   createdAt           DateTime? @default(now())
   updatedAt           DateTime? @updatedAt
   refreshToken        String?
+  isEmailVerified     Boolean @default(false)
   Booking             Booking[]
 }
 
@@ -66,6 +67,8 @@ model Event {
 model Booking {
   id                 String        @id @unique @default(uuid())
   totalAmount        Int
+  qrCode             String?       @unique
+  status             TicketStatus  @default(VALID)
   merchandiseType    String?
   merchandiseSize    String?
   merchandiseSleeves String?
@@ -125,6 +128,12 @@ enum EventStatus {
   Active
   Hidden
   Expired
+}
+
+enum TicketStatus {
+  VALID
+  USED
+  CANCELLED
 }
 
 enum PaymentStatus {
