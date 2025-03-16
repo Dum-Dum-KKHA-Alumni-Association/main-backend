@@ -6,7 +6,7 @@ import {
 	getObjectUrl,
 	listObjects,
 	uploadToS3,
-} from '../utils/generate-upload-url';
+} from '../helper/generate-upload-url';
 import { Response } from 'express';
 import { AuthenticatedRequest } from 'types/apiRequest';
 

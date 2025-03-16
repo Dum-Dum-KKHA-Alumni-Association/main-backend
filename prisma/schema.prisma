@@ -17,7 +17,7 @@ datasource db {
 
 model User {
   id                  String    @id @unique @default(uuid())
-  fullName                String
+  fullName            String
   email               String    @unique
   password            String?
   googleId            String?   @unique
@@ -33,7 +33,7 @@ model User {
   bloodGroup          String?
   occupation          String?
   membershipId        String?
-  linkedin            String?
+  linkedin          String?
   instagram           String?
   twitter             String?
   facebook            String?

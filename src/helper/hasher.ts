@@ -9,5 +9,11 @@ export const comparePassword = async (
 	enteredPassword: string,
 	hashedPassword: string
 ) => {
-	return bcrypt.compare(enteredPassword, hashedPassword);
+	if (
+		typeof enteredPassword !== 'string' ||
+		typeof hashedPassword !== 'string'
+	) {
+		throw new Error('Invalid arguments: Passwords must be strings');
+	}
+	return await bcrypt.compare(enteredPassword, hashedPassword);
 };

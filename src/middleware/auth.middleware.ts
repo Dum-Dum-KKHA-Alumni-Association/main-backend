@@ -11,7 +11,11 @@ export const jwtAuthMiddleware = passport.authenticate('jwt', {
 });
 
 export const googleOAuthMiddleware = passport.authenticate('google', {
-	scope: ['email', 'profile', 'openid'],
+	scope: ['email', 'profile'],
+});
+export const googleOAuthCallback = passport.authenticate('google', {
+	failureRedirect: '/',
+	session: false,
 });
 
 //// api Authentication logic

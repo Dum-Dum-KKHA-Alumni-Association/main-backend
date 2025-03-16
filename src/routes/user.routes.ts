@@ -1,34 +1,39 @@
 import { Router } from 'express';
 import {
 	forgetPassword,
-	loginAdminUser,
-	loginUser,
-	logoutUser,
-	refreshToken,
+	onboardUser,
 	registerUser,
 	resetLink,
 	updateUserProfile,
+	userIsOnboarded,
 	userProfile,
+	userAccount,
+	updateUserAccount,
+	userDetails,
+	createNewUser,
+	deleteUserAccount,
 } from '../controllers/user.controllers';
 
-import {
-	isAuthenticated,
-	jwtAuthMiddleware,
-	localAuthMiddleware,
-} from '../middleware/auth.middleware';
+import { jwtAuthMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
-router.route('/login').post(localAuthMiddleware, loginUser);
-router.route('/adminLogin').post(localAuthMiddleware, loginAdminUser);
-router.route('/refresh-token').post(refreshToken);
-
 router.route('/register').post(registerUser);
-router.route('/logout').post(logoutUser);
+router.route('/onboard').post(jwtAuthMiddleware, onboardUser);
+router.route('/isOnboarded').get(jwtAuthMiddleware, userIsOnboarded);
 router
 	.route('/profile')
 	.get(jwtAuthMiddleware, userProfile)
-	.put(isAuthenticated, updateUserProfile);
+	.put(jwtAuthMiddleware, updateUserProfile);
+router
+	.route('/account')
+	.get(jwtAuthMiddleware, userAccount)
+	.put(jwtAuthMiddleware, updateUserAccount)
+	.delete(deleteUserAccount);
+
+///For Admin Users
+router.route('/').get(userDetails);
+router.route('/createNewUser').post(createNewUser);
 
 router.route('/forget-password').post(forgetPassword);
 router.route('/reset-link').put(resetLink);
