@@ -175,15 +175,15 @@ export const checkPaymentGateWayStatus = asyncHandler(
 						pgServiceTransactionId:
 							data.data.paymentInstrument.pgServiceTransactionId,
 						responseDescription: data.data.responseCodeDescription,
-						Donation: {
-							update: {
-								DonationPage: {
-									update: {
-										collectedAmount: data.data.amount,
-									},
-								},
-							},
-						},
+						// Donation: {
+						// 	update: {
+						// 		DonationPage: {
+						// 			update: {
+						// 				collectedAmount: data.data.amount,
+						// 			},
+						// 		},
+						// 	},
+						// },
 					},
 				});
 				console.log(paymentDetailsUpdate);

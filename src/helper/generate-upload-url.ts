@@ -6,7 +6,7 @@ import {
 	S3Client,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import { aws_s3_config } from '../config/aws-sdk-s3-config';
+import { aws_s3_config } from '../config/aws-sdk-s3.config';
 
 const s3Client = new S3Client({
 	region: aws_s3_config.region,

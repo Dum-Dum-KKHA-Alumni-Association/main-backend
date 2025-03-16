@@ -1,25 +1,41 @@
 import { Router } from 'express';
-// import { loginAdminUser, loginUser } from "../controllers/user.controllers";
-
 import {
-	loginAdminUser,
-	loginUser,
-	logoutUser,
-	registerAdminUser,
+	forgetPassword,
+	onboardUser,
 	registerUser,
+	resetLink,
+	updateUserProfile,
+	userIsOnboarded,
+	userProfile,
+	userAccount,
+	updateUserAccount,
+	userDetails,
+	createNewUser,
+	deleteUserAccount,
 } from '../controllers/user.controllers';
+
+import { jwtAuthMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
-//General Access
-router.route('/login').post(loginUser);
-router.route('/signup').post(registerUser);
-router.route('/logout').post(logoutUser);
+router.route('/register').post(registerUser);
+router.route('/onboard').post(jwtAuthMiddleware, onboardUser);
+router.route('/isOnboarded').get(jwtAuthMiddleware, userIsOnboarded);
+router
+	.route('/profile')
+	.get(jwtAuthMiddleware, userProfile)
+	.put(jwtAuthMiddleware, updateUserProfile);
+router
+	.route('/account')
+	.get(jwtAuthMiddleware, userAccount)
+	.put(jwtAuthMiddleware, updateUserAccount)
+	.delete(deleteUserAccount);
 
-//Admin Access
-router.route('/adminLogin').post(loginAdminUser);
-router.route('/adminSignup').post(registerAdminUser);
-router.route('/logout').post(logoutUser);
-// router.route('/:userId').get(userDetails);
+///For Admin Users
+router.route('/').get(userDetails);
+router.route('/createNewUser').post(createNewUser);
+
+router.route('/forget-password').post(forgetPassword);
+router.route('/reset-link').put(resetLink);
 
 export default router;
